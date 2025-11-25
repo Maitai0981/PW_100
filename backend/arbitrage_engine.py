@@ -20,16 +20,36 @@ class ArbitrageEngine:
 
     def __init__(self, output_dir: str = "data"):
         self.monitor = CryptoArbitrageMonitor()
-        self.data_manager = RealTimeDataManager(update_interval=30)
+        self.data_manager = RealTimeDataManager(update_interval=1)
         self.output_dir = output_dir
-        self.opportunities_history = deque(maxlen=100)  # Limita automaticamente a 100 itens
         self.is_running = False
 
         # Criar diretório de saída
         os.makedirs(output_dir, exist_ok=True)
 
+        # Carregar histórico existente ou criar novo
+        self.opportunities_history = self._load_history()
+
         # Registrar callback para quando dados forem atualizados
         self.data_manager.add_callback(self._on_data_updated)
+
+    def _load_history(self):
+        """Carrega histórico existente do arquivo ou cria novo"""
+        history_path = os.path.join(self.output_dir, "history.json")
+
+        if os.path.exists(history_path):
+            try:
+                with open(history_path, 'r') as f:
+                    history_data = json.load(f)
+                    # Criar deque a partir dos dados carregados, mantendo limite de 100
+                    history = deque(history_data, maxlen=100)
+                    print(f"📜 Histórico carregado: {len(history)} registros anteriores")
+                    return history
+            except Exception as e:
+                print(f"⚠️ Erro ao carregar histórico: {e}")
+                return deque(maxlen=100)
+        else:
+            return deque(maxlen=100)
 
     def _on_data_updated(self, rates, summary):
         """Callback chamado quando dados são atualizados"""
@@ -149,7 +169,7 @@ class ArbitrageEngine:
         print("🚀 INICIANDO ENGINE DE ARBITRAGEM")
         print("="*60)
         print("📡 Conectando a exchanges...")
-        print("🔄 Atualizações automáticas a cada 30 segundos")
+        print("🔄 Atualizações automáticas a cada 1 segundo")
         print("💡 Pressione Ctrl+C para parar")
         print("="*60)
 

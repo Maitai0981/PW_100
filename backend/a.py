@@ -16,8 +16,14 @@ class CryptoArbitrageMonitor:
         for from_curr, to_curr, rate in rates:
             currencies.add(from_curr)
             currencies.add(to_curr)
-        
-        self.currencies = sorted(list(currencies))
+
+        # Garantir que BRL seja sempre a primeira moeda
+        currencies_list = sorted(list(currencies))
+        if 'BRL' in currencies_list:
+            currencies_list.remove('BRL')
+            currencies_list.insert(0, 'BRL')
+
+        self.currencies = currencies_list
         self.currency_idx = {curr: i for i, curr in enumerate(self.currencies)}
         
         # Inicializar matriz de taxas com 0 (sem conversão)
@@ -35,53 +41,55 @@ class CryptoArbitrageMonitor:
             self.rates[i][i] = 1.0
             
     def find_arbitrage_opportunities(self) -> List[List[str]]:
-        """Encontra todas as oportunidades de arbitragem triangular"""
+        """Encontra todas as oportunidades de arbitragem triangular começando em BRL"""
         n = len(self.currencies)
         opportunities = []
-        
-        # Verificar todos os trios possíveis
-        for i in range(n):
-            for j in range(n):
-                for k in range(n):
-                    if i == j or j == k or i == k:
-                        continue
-                    
-                    # Calcular o produto das taxas no triângulo
-                    rate1 = self.rates[i][j]  # i -> j
-                    rate2 = self.rates[j][k]  # j -> k  
-                    rate3 = self.rates[k][i]  # k -> i
-                    
-                    if rate1 > 0 and rate2 > 0 and rate3 > 0:
-                        product = rate1 * rate2 * rate3
-                        
-                        # Se o produto > 1, há oportunidade de arbitragem
-                        if product > 1.001:  # 0.1% de margem para custos
-                            profit_percent = (product - 1) * 100
-                            path = [
-                                self.currencies[i],
-                                self.currencies[j], 
-                                self.currencies[k],
-                                self.currencies[i]
-                            ]
-                            opportunities.append({
-                                'path': path,
-                                'profit_percent': profit_percent,
-                                'rates': [rate1, rate2, rate3],
-                                'product': product
-                            })
-        
+
+        # Sempre começar de BRL (índice 0)
+        i = 0
+
+        # Verificar todos os pares possíveis partindo de BRL
+        for j in range(n):
+            for k in range(n):
+                if i == j or j == k or i == k:
+                    continue
+
+                # Calcular o produto das taxas no triângulo: BRL -> j -> k -> BRL
+                rate1 = self.rates[i][j]  # BRL -> j
+                rate2 = self.rates[j][k]  # j -> k
+                rate3 = self.rates[k][i]  # k -> BRL
+
+                if rate1 > 0 and rate2 > 0 and rate3 > 0:
+                    product = rate1 * rate2 * rate3
+
+                    # Se o produto > 1, há oportunidade de arbitragem
+                    if product > 1.001:  # 0.1% de margem para custos
+                        profit_percent = (product - 1) * 100
+                        path = [
+                            self.currencies[i],  # BRL
+                            self.currencies[j],
+                            self.currencies[k],
+                            self.currencies[i]   # BRL
+                        ]
+                        opportunities.append({
+                            'path': path,
+                            'profit_percent': profit_percent,
+                            'rates': [rate1, rate2, rate3],
+                            'product': product
+                        })
+
         return sorted(opportunities, key=lambda x: x['profit_percent'], reverse=True)
     
     def bellman_ford_arbitrage(self) -> List[Dict]:
-        """Versão aprimorada usando Bellman-Ford para detectar ciclos negativos"""
+        """Versão aprimorada usando Bellman-Ford para detectar ciclos negativos começando em BRL"""
         n = len(self.currencies)
         dist = [0.0] * n
         predec = [-1] * n
-        
-        # Inicializar distâncias
+
+        # Inicializar distâncias começando de BRL (índice 0)
         for i in range(n):
             dist[i] = 0.0 if i == 0 else float('inf')
-        
+
         # Aplicar Bellman-Ford com transformação logarítmica
         edges = []
         for i in range(n):
@@ -90,14 +98,14 @@ class CryptoArbitrageMonitor:
                     # Transformação: maximizar produto = minimizar soma de -log(rate)
                     weight = -math.log(self.rates[i][j])
                     edges.append((i, j, weight))
-        
+
         # Relaxamento das arestas
         for _ in range(n - 1):
             for u, v, w in edges:
                 if dist[u] != float('inf') and dist[u] + w < dist[v]:
                     dist[v] = dist[u] + w
                     predec[v] = u
-        
+
         # Detectar ciclos negativos (oportunidades de arbitragem)
         arbitrage_cycles = []
         for u, v, w in edges:
@@ -105,14 +113,17 @@ class CryptoArbitrageMonitor:
                 # Encontrou ciclo negativo - reconstruir o ciclo
                 cycle = self._reconstruct_cycle(v, predec)
                 if cycle and len(cycle) > 2:
-                    profit = self._calculate_cycle_profit(cycle)
-                    if profit > 1.001:
-                        arbitrage_cycles.append({
-                            'path': [self.currencies[i] for i in cycle],
-                            'profit_percent': (profit - 1) * 100,
-                            'product': profit
-                        })
-        
+                    # Reorganizar ciclo para começar em BRL (índice 0)
+                    if 0 in cycle:
+                        cycle = self._normalize_cycle_to_brl(cycle)
+                        profit = self._calculate_cycle_profit(cycle)
+                        if profit > 1.001:
+                            arbitrage_cycles.append({
+                                'path': [self.currencies[i] for i in cycle],
+                                'profit_percent': (profit - 1) * 100,
+                                'product': profit
+                            })
+
         return arbitrage_cycles
     
     def _reconstruct_cycle(self, start: int, predec: List[int]) -> List[int]:
@@ -148,6 +159,22 @@ class CryptoArbitrageMonitor:
             to_idx = cycle[(i + 1) % len(cycle)]
             profit *= self.rates[from_idx][to_idx]
         return profit
+
+    def _normalize_cycle_to_brl(self, cycle: List[int]) -> List[int]:
+        """Reorganiza o ciclo para sempre começar e terminar em BRL (índice 0)"""
+        if 0 not in cycle:
+            return cycle
+
+        # Encontrar a posição do BRL no ciclo
+        brl_pos = cycle.index(0)
+
+        # Reorganizar o ciclo para começar em BRL
+        normalized = cycle[brl_pos:] + cycle[:brl_pos]
+
+        # Adicionar BRL no final para fechar o ciclo
+        normalized.append(0)
+
+        return normalized
 
     def get_arbitrage_statistics(self) -> Dict:
         """Retorna estatísticas sobre o estado atual do mercado"""
