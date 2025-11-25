@@ -1,0 +1,11 @@
+# Dependências do Crypto Arbitrage Monitor
+
+# Computação numérica e otimização
+numpy>=1.21.0
+
+# Requisições HTTP para APIs
+requests>=2.26.0
+
+# Opcional: para desenvolvimento
+# pytest>=7.0.0  # testes
+# black>=22.0.0  # formatação de código

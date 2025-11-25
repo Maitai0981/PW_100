@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crypto Arbitrage Monitor - Real Time</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <span class="logo-icon">📊</span>
+                    <h1>Crypto Arbitrage Monitor</h1>
+                </div>
+                <div class="status-badge" id="statusBadge">
+                    <span class="status-dot"></span>
+                    <span id="statusText">Conectando...</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Stats Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">💰</div>
+                <div class="stat-content">
+                    <div class="stat-label">Oportunidades Ativas</div>
+                    <div class="stat-value" id="totalOpportunities">0</div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">📈</div>
+                <div class="stat-content">
+                    <div class="stat-label">Maior Lucro</div>
+                    <div class="stat-value" id="maxProfit">0.00%</div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">🪙</div>
+                <div class="stat-content">
+                    <div class="stat-label">Moedas Monitoradas</div>
+                    <div class="stat-value" id="totalCurrencies">0</div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">🔄</div>
+                <div class="stat-content">
+                    <div class="stat-label">Pares Ativos</div>
+                    <div class="stat-value" id="totalPairs">0</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content Grid -->
+        <div class="content-grid">
+            <!-- Opportunities List -->
+            <div class="panel opportunities-panel">
+                <div class="panel-header">
+                    <h2>🎯 Oportunidades de Arbitragem</h2>
+                    <div class="panel-actions">
+                        <button class="btn-icon" id="refreshBtn" title="Atualizar">
+                            <span>🔄</span>
+                        </button>
+                        <button class="btn-icon" id="sortBtn" title="Ordenar">
+                            <span>⬆️⬇️</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="panel-content">
+                    <div id="opportunitiesList" class="opportunities-list">
+                        <!-- Opportunities will be inserted here -->
+                        <div class="empty-state">
+                            <div class="empty-icon">🔍</div>
+                            <p>Buscando oportunidades...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Market Info -->
+            <div class="panel market-panel">
+                <div class="panel-header">
+                    <h2>📊 Informações do Mercado</h2>
+                </div>
+                <div class="panel-content">
+                    <div class="market-info">
+                        <div class="info-row">
+                            <span class="info-label">Última Atualização:</span>
+                            <span class="info-value" id="lastUpdate">-</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Tempo de Detecção:</span>
+                            <span class="info-value" id="detectionTime">-</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Cobertura de Mercado:</span>
+                            <span class="info-value" id="marketCoverage">-</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Lucro Médio:</span>
+                            <span class="info-value" id="avgProfit">-</span>
+                        </div>
+                    </div>
+
+                    <div class="chart-container">
+                        <h3>Histórico de Oportunidades</h3>
+                        <canvas id="historyChart"></canvas>
+                    </div>
+
+                    <div class="currencies-list">
+                        <h3>Moedas Ativas</h3>
+                        <div id="currenciesTags" class="currency-tags">
+                            <!-- Currency tags will be inserted here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Graph Visualization -->
+        <div class="panel graph-panel">
+            <div class="panel-header">
+                <h2>🌐 Visualização de Rede</h2>
+                <div class="panel-actions">
+                    <button class="btn-icon" id="zoomInBtn" title="Zoom In">+</button>
+                    <button class="btn-icon" id="zoomOutBtn" title="Zoom Out">-</button>
+                    <button class="btn-icon" id="resetZoomBtn" title="Reset">⟲</button>
+                </div>
+            </div>
+            <div class="panel-content">
+                <div id="graphContainer" class="graph-container">
+                    <canvas id="networkCanvas"></canvas>
+                    <div class="graph-legend">
+                        <div class="legend-item">
+                            <div class="legend-color crypto"></div>
+                            <span>Criptomoeda</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color fiat"></div>
+                            <span>Moeda Fiat</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color arbitrage"></div>
+                            <span>Rota de Arbitragem</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
