@@ -1,4 +1,5 @@
 import math
+import random
 from typing import List, Tuple, Dict
 import time
 
@@ -190,9 +191,8 @@ def simulate_market_data() -> List[Tuple[str, str, float]]:
         ("JPY", "EUR", 0.0075),  # Esta taxa cria arbitragem
         ("EUR", "USD", 1.10),
     ]
-    
+
     # Misturar com algumas taxas variáveis
-    import random
     all_rates = base_rates + arbitrage_rates
     
     # Adicionar pequenas variações para simular mercado real

@@ -6,13 +6,14 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
-from a import CryptoArbitrageMonitor
+from backend.a import CryptoArbitrageMonitor
 from backend.crypto_data_fetcher import RealTimeDataManager
 import json
 import time
 from datetime import datetime
 from typing import List, Dict
 import threading
+from collections import deque
 
 class ArbitrageEngine:
     """Engine principal que coordena coleta de dados e detecção de arbitragem"""
@@ -21,7 +22,7 @@ class ArbitrageEngine:
         self.monitor = CryptoArbitrageMonitor()
         self.data_manager = RealTimeDataManager(update_interval=30)
         self.output_dir = output_dir
-        self.opportunities_history = []
+        self.opportunities_history = deque(maxlen=100)  # Limita automaticamente a 100 itens
         self.is_running = False
 
         # Criar diretório de saída
@@ -140,7 +141,7 @@ class ArbitrageEngine:
         # Salvar histórico
         history_path = os.path.join(self.output_dir, "history.json")
         with open(history_path, 'w') as f:
-            json.dump(self.opportunities_history[-100:], f, indent=2)  # Últimos 100
+            json.dump(list(self.opportunities_history), f, indent=2)  # deque -> list para JSON
 
     def start_monitoring(self):
         """Inicia monitoramento contínuo"""
